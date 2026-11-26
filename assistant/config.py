@@ -129,13 +129,20 @@ class EspeakCfg:
 
 
 @dataclass
+class WindowsTTSCfg:
+    enabled: bool = True
+    rate: int = 0                     # -10 (slow) … 10 (fast)
+
+
+@dataclass
 class TTSCfg:
-    order: list[str] = field(default_factory=lambda: ["piper", "espeak"])
+    order: list[str] = field(default_factory=lambda: ["piper", "windows", "espeak"])
     timeout_s: float = 15.0
     max_sentence_chars: int = 220
     breaker_threshold: int = 3
     breaker_reset_s: float = 60.0
     piper: PiperCfg = field(default_factory=PiperCfg)
+    windows: WindowsTTSCfg = field(default_factory=WindowsTTSCfg)
     espeak: EspeakCfg = field(default_factory=EspeakCfg)
 
 

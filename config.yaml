@@ -40,11 +40,13 @@ llm:
     model: "claude-sonnet-5-5"
 
 tts:
-  order: [piper, espeak]
+  order: [piper, windows, espeak]   # windows = built-in voices, no install needed
   piper:
     voices:
       en: models/piper/en_US-lessac-medium.onnx
       # ta: models/piper/<your-tamil-voice>.onnx   # add one if you have it
+  windows:
+    rate: 0                    # -10 slow … 10 fast
   espeak:
     voices: {en: en-us, ta: ta}   # espeak-ng speaks Tamil out of the box
 

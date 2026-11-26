@@ -8,6 +8,7 @@ from __future__ import annotations
 import importlib.util
 import logging
 import shutil
+import sys
 from dataclasses import dataclass
 
 from .audio.input import AudioSource, MicrophoneStream
@@ -35,6 +36,7 @@ from .stt.whisper_local import FasterWhisperSTT
 from .tts.espeak_engine import EspeakTTS
 from .tts.fallback import FallbackTTS
 from .tts.piper_engine import PiperTTS
+from .tts.windows_engine import WindowsSapiTTS
 from .tts.speaker import ConsoleSpeaker, SoundDevicePlayer, Speaker, SpeechOutput
 
 log = logging.getLogger(__name__)
@@ -139,6 +141,14 @@ def build_speaker(cfg: Config) -> Speaker:
                 log.warning("no Piper voice file found (see README → Piper voices); skipping Piper")
                 continue
             engines.append(piper)
+        elif name == "windows" and cfg.tts.windows.enabled:
+            if sys.platform != "win32":
+                continue
+            windows = WindowsSapiTTS(cfg.tts.windows, cfg.tts.timeout_s)
+            if not windows.available:
+                log.warning("Windows speech voices not found; skipping")
+                continue
+            engines.append(windows)
         elif name == "espeak" and cfg.tts.espeak.enabled:
             if shutil.which(cfg.tts.espeak.binary) is None:
                 log.info("%s not found; skipping eSpeak", cfg.tts.espeak.binary)
