@@ -77,6 +77,7 @@ class CloudSTTCfg:
 @dataclass
 class STTCfg:
     language: str = "auto"            # auto | en | ta
+    languages: list[str] = field(default_factory=lambda: ["en", "ta"])  # auto-detect picks only from these
     timeout_s: float = 40.0
     breaker_threshold: int = 3
     breaker_reset_s: float = 60.0

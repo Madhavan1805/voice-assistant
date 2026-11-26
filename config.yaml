@@ -24,6 +24,7 @@ vad:
 
 stt:
   language: auto               # auto | en | ta
+  languages: [en, ta]          # auto-detect chooses only between these (stops 'Hindi/Malayalam' mis-detections)
   whisper:
     model: base                # tiny/base = faster on CPU, small/medium = more accurate (Tamil!)
     compute_type: int8

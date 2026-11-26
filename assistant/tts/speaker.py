@@ -81,6 +81,8 @@ class SpeechOutput:
         if not text:
             return
         lang = language or detect_language(text)
+        if not self._engine.supports(lang):
+            lang = detect_language(text)
         sentences = split_sentences(text, self._max_chars)
         queue: asyncio.Queue[AudioChunk | Exception | None] = asyncio.Queue(maxsize=2)
 

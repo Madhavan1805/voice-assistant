@@ -198,7 +198,7 @@ class SpeechPipeline:
 
             log.info("heard: %r [%s, conf %.2f, %s]", transcript.text, transcript.language,
                      transcript.confidence, transcript.engine)
-            lang = transcript.language or detect_language(transcript.text)
+            lang = transcript.language if transcript.language in ("en", "ta") else detect_language(transcript.text)
             gate = self._wake.check(transcript.text)
             if not gate.accepted:
                 log.debug("ignored (no wake phrase)")
@@ -237,7 +237,8 @@ class SpeechPipeline:
             try:
                 await self._speaker.say(item.speech, item.language)
             except TTSError as exc:
-                log.error("speech output failed: %s — reply was: %s", exc, item.speech)
+                log.error("speech output failed: %s", exc)
+                print(f"assistant> {item.speech}", flush=True)   # you still see the reply
             finally:
                 await asyncio.sleep(self._cfg.post_speech_cooldown_s)  # let the room echo die
                 self._speaking.clear()

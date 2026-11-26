@@ -108,7 +108,7 @@ def build_assistant(cfg: Config) -> Assistant:
 def build_stt(cfg: Config) -> STTEngine:
     engines: list[STTEngine] = []
     if importlib.util.find_spec("faster_whisper") is not None:
-        engines.append(FasterWhisperSTT(cfg.stt.whisper, cfg.stt.language))
+        engines.append(FasterWhisperSTT(cfg.stt.whisper, cfg.stt.language, cfg.stt.languages))
     else:
         log.warning("faster-whisper is not installed; local speech recognition unavailable")
     if cfg.stt.cloud.enabled:

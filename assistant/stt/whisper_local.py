@@ -9,6 +9,7 @@ import asyncio
 import logging
 import math
 import threading
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -29,6 +30,12 @@ _PHANTOMS = {
 }
 
 
+def _is_repetitive(text: str) -> bool:
+    """Whisper on noise often loops ("ayayayay…"); real speech compresses far less."""
+    raw = text.encode("utf-8")
+    return len(raw) >= 60 and len(raw) / len(zlib.compress(raw)) > 2.4
+
+
 def _looks_phantom(text: str, confidence: float) -> bool:
     return confidence < 0.55 and normalize(text) in _PHANTOMS
 
@@ -36,9 +43,10 @@ def _looks_phantom(text: str, confidence: float) -> bool:
 class FasterWhisperSTT(STTEngine):
     name = "faster-whisper"
 
-    def __init__(self, cfg: WhisperCfg, language: str = "auto") -> None:
+    def __init__(self, cfg: WhisperCfg, language: str = "auto", languages: list[str] | None = None) -> None:
         self._cfg = cfg
         self._language = None if language in ("", "auto") else language
+        self._languages = list(languages or [])
         self._model = None
         self._load_lock = threading.Lock()
         # ONE worker: a timed-out job can't be killed, so parallel jobs would pile up and
@@ -61,12 +69,25 @@ class FasterWhisperSTT(STTEngine):
     async def warmup(self) -> None:
         await asyncio.get_running_loop().run_in_executor(self._executor, self._ensure_model)
 
+    def _pick_language(self, model, pcm: np.ndarray) -> str | None:
+        """Auto-detect, but only among the allowed languages (en/ta), never Hindi/Malayalam/etc."""
+        if self._language or not self._languages:
+            return self._language
+        try:
+            _, _, probs = model.detect_language(pcm)
+            ranked = [(float(p), lang) for lang, p in probs if lang in self._languages]
+            if ranked:
+                return max(ranked)[1]
+        except Exception:  # noqa: BLE001 - detection is an optimisation; fall back to Whisper's own
+            log.debug("language detection failed", exc_info=True)
+        return None
+
     def _transcribe_sync(self, audio: np.ndarray) -> Transcript:
         model = self._ensure_model()
         pcm = audio.astype(np.float32) / 32768.0
         segments, info = model.transcribe(
             pcm,
-            language=self._language,
+            language=self._pick_language(model, pcm),
             beam_size=self._cfg.beam_size,
             vad_filter=self._cfg.vad_filter,
             condition_on_previous_text=False,
@@ -79,6 +100,8 @@ class FasterWhisperSTT(STTEngine):
             raise TranscriptionEmpty("no speech detected")
         avg_logprob = sum(s.avg_logprob for s in kept) / len(kept)
         confidence = max(0.0, min(1.0, math.exp(avg_logprob)))
+        if _is_repetitive(text):
+            raise TranscriptionEmpty(f"discarded looping hallucination: {text[:40]!r}…")
         if _looks_phantom(text, confidence):
             raise TranscriptionEmpty(f"discarded likely hallucination: {text!r}")
         return Transcript(text=text, language=info.language, confidence=confidence, engine=self.name)
