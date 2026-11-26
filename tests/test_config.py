@@ -12,7 +12,7 @@ def test_defaults_are_valid():
 
 def test_shipped_config_yaml_loads():
     cfg = Config.load("config.yaml")
-    assert cfg.stt.whisper.model == "small"
+    assert cfg.stt.whisper.model == "base"
     assert cfg.skills.smart_home.devices["fan"] == "switch.fan"
 
 

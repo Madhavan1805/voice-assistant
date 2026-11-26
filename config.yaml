@@ -2,10 +2,10 @@
 log_level: INFO
 
 assistant:
-  name: Madhav
-  wake_phrases: ["hey madhav", "hi madhav", "ok madhav", "madhav"]
+  name: Kandy
+  wake_phrases: ["hey kandy", "hi kandy", "ok kandy", "kandy", "hey candy", "hi candy", "candy"]
   wake_required: true          # false = respond to everything (noisy rooms: keep true)
-  followup_window_s: 8         # after a reply, no wake word needed for this long
+  followup_window_s: 15        # after a reply, no wake word needed for this long
   skill_timeout_s: 20
 
 audio:
@@ -25,7 +25,7 @@ vad:
 stt:
   language: auto               # auto | en | ta
   whisper:
-    model: small               # tiny/base = faster, medium/large-v3 = more accurate (Tamil!)
+    model: base                # tiny/base = faster on CPU, small/medium = more accurate (Tamil!)
     compute_type: int8
   cloud:
     enabled: false             # OpenAI-compatible /audio/transcriptions fallback

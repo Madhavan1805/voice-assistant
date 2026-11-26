@@ -35,7 +35,7 @@ cp .env.example .env                            # add ANTHROPIC_API_KEY if you w
 
 python main.py --text          # no mic needed: type commands
 python main.py --list-devices
-python main.py                 # live voice. Say: "Hey Madhav, what time is it?"
+python main.py                 # live voice. Say: "Hey Kandy, what time is it?"
 ```
 
 Local LLM: install [Ollama](https://ollama.com), then `ollama pull llama3.2:3b`.

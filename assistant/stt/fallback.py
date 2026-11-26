@@ -33,7 +33,7 @@ class FallbackSTT(STTEngine):
         errors: list[str] = []
         for engine in self._engines:
             breaker = self._breakers[engine.name]
-            if not breaker.allow():
+            if len(self._engines) > 1 and not breaker.allow():  # sole engine: always try
                 errors.append(f"{engine.name}: circuit open")
                 continue
             try:

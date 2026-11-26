@@ -174,6 +174,10 @@ class SpeechPipeline:
             if utt is None:
                 await self._cmd_q.put(None)
                 return
+            age = time.time() - utt.captured_at
+            if age > self._cfg.max_utterance_age_s:
+                log.warning("dropping stale utterance (%.0fs old) — STT is behind", age)
+                continue
             self._set_state(State.TRANSCRIBING)
             try:
                 transcript = await self._stt.transcribe(utt)

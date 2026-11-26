@@ -137,3 +137,13 @@ async def test_stage_crash_is_supervised_and_restarts(make_assistant):
     )
     await _run(_pipeline(stt, speaker, d, 2))
     assert any(s.startswith("It's") for s in speaker.said)
+
+
+async def test_stale_utterances_are_dropped_not_transcribed(make_assistant):
+    d, _ = make_assistant(None, TimeSkill())
+    speaker = RecordingSpeaker()
+    stt = ScriptedSTT(Transcript("Hey Madhav what time is it", "en", 0.9))
+    p = _pipeline(stt, speaker, d, 1)
+    p._cfg.max_utterance_age_s = -1          # everything is "too old"
+    await _run(p)
+    assert speaker.said == [] and len(stt.outcomes) == 1   # STT never even called

@@ -9,6 +9,7 @@ import asyncio
 import logging
 import math
 import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
@@ -40,6 +41,9 @@ class FasterWhisperSTT(STTEngine):
         self._language = None if language in ("", "auto") else language
         self._model = None
         self._load_lock = threading.Lock()
+        # ONE worker: a timed-out job can't be killed, so parallel jobs would pile up and
+        # starve the CPU (and the microphone). Serialising keeps the machine responsive.
+        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="whisper")
 
     def _ensure_model(self):
         with self._load_lock:
@@ -55,7 +59,7 @@ class FasterWhisperSTT(STTEngine):
         return self._model
 
     async def warmup(self) -> None:
-        await asyncio.to_thread(self._ensure_model)
+        await asyncio.get_running_loop().run_in_executor(self._executor, self._ensure_model)
 
     def _transcribe_sync(self, audio: np.ndarray) -> Transcript:
         model = self._ensure_model()
@@ -67,6 +71,7 @@ class FasterWhisperSTT(STTEngine):
             vad_filter=self._cfg.vad_filter,
             condition_on_previous_text=False,
             no_speech_threshold=0.6,
+            temperature=0.0,  # no fallback re-decoding: on noisy audio it made each clip 5-10x slower
         )
         kept = [s for s in segments if s.no_speech_prob < 0.6]  # consume the generator
         text = " ".join(s.text.strip() for s in kept).strip()
@@ -80,8 +85,13 @@ class FasterWhisperSTT(STTEngine):
 
     async def transcribe(self, utterance: Utterance) -> Transcript:
         try:
-            return await asyncio.to_thread(self._transcribe_sync, utterance.audio)
+            return await asyncio.get_running_loop().run_in_executor(
+                self._executor, self._transcribe_sync, utterance.audio
+            )
         except (STTError, TranscriptionEmpty):
             raise
         except Exception as exc:  # noqa: BLE001 - model/runtime failures
             raise STTError(f"faster-whisper failed: {exc}") from exc
+
+    async def aclose(self) -> None:
+        self._executor.shutdown(wait=False, cancel_futures=True)

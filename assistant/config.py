@@ -15,17 +15,18 @@ from .errors import ConfigError
 
 @dataclass
 class AssistantCfg:
-    name: str = "Madhav"
+    name: str = "Kandy"
     wake_phrases: list[str] = field(
-        default_factory=lambda: ["hey madhav", "hi madhav", "ok madhav", "madhav"]
+        default_factory=lambda: ["hey kandy", "hi kandy", "ok kandy", "kandy", "hey candy", "hi candy", "candy"]
     )
     wake_required: bool = True
     wake_threshold: float = 0.8       # fuzzy match ratio (STT mishears names)
-    followup_window_s: float = 8.0    # no wake word needed right after a reply
-    history_turns: int = 6
+    followup_window_s: float = 15.0   # no wake word needed right after a reply
+    history_turns: int = 10
     skill_timeout_s: float = 20.0
     min_confidence: float = 0.3       # STT confidence below this → "say again"
     post_speech_cooldown_s: float = 0.4
+    max_utterance_age_s: float = 10.0  # older queued speech is dropped, not transcribed
 
 
 @dataclass
@@ -76,7 +77,7 @@ class CloudSTTCfg:
 @dataclass
 class STTCfg:
     language: str = "auto"            # auto | en | ta
-    timeout_s: float = 25.0
+    timeout_s: float = 40.0
     breaker_threshold: int = 3
     breaker_reset_s: float = 60.0
     whisper: WhisperCfg = field(default_factory=WhisperCfg)

@@ -39,12 +39,13 @@ def _parse_args() -> argparse.Namespace:
 
 def _setup_logging(level: str, verbose: bool) -> None:
     logging.basicConfig(
-        level=logging.DEBUG if verbose else getattr(logging, level.upper(), logging.INFO),
+        level=logging.WARNING,   # third-party libraries (httpx, huggingface…) stay quiet
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
         datefmt="%H:%M:%S",
     )
-    for noisy in ("httpx", "httpcore", "urllib3", "selenium", "faster_whisper"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
+    logging.getLogger("assistant").setLevel(
+        logging.DEBUG if verbose else getattr(logging, level.upper(), logging.INFO)
+    )
 
 
 async def _text_repl(assistant: Assistant) -> None:

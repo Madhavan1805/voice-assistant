@@ -50,12 +50,21 @@ async def test_stt_empty_is_not_retried_on_other_engines():
 
 
 async def test_stt_all_fail_and_circuit_opens():
-    a = StubSTT("a", STTError("down"))
-    chain = FallbackSTT([a], breaker_threshold=2, breaker_reset_s=999)
+    a, b = StubSTT("a", STTError("down")), StubSTT("b", STTError("down"))
+    chain = FallbackSTT([a, b], breaker_threshold=2, breaker_reset_s=999)
     for _ in range(4):
         with pytest.raises(STTError):
             await chain.transcribe(UTT)
-    assert a.calls == 2   # breaker stopped hammering the dead engine
+    assert a.calls == 2 and b.calls == 2   # breakers stopped hammering the dead engines
+
+
+async def test_sole_stt_engine_is_never_locked_out():
+    a = StubSTT("a", STTError("down"))
+    chain = FallbackSTT([a], breaker_threshold=1, breaker_reset_s=999)
+    for _ in range(3):
+        with pytest.raises(STTError):
+            await chain.transcribe(UTT)
+    assert a.calls == 3
 
 
 async def test_stt_timeout_counts_as_failure():
