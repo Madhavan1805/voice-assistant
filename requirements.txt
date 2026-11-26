@@ -1,0 +1,23 @@
+# ── Core ─────────────────────────────────────────────────────────────
+numpy>=1.26
+PyYAML>=6.0.1
+python-dotenv>=1.0.0
+httpx>=0.27            # Ollama, Home Assistant, cloud STT
+tzdata>=2024.1         # zoneinfo data (needed on Windows)
+
+# ── Audio I/O + VAD ──────────────────────────────────────────────────
+sounddevice>=0.4.6     # needs PortAudio: `sudo apt install libportaudio2`
+webrtcvad-wheels>=2.0.10   # optional: better VAD; falls back to adaptive energy VAD
+
+# ── Speech-to-text (local) ───────────────────────────────────────────
+faster-whisper>=1.0.0
+
+# ── Text-to-speech (local) ───────────────────────────────────────────
+piper-tts>=1.2.0       # also install `espeak-ng` from your OS package manager (Tamil fallback voice)
+
+# ── LLM ──────────────────────────────────────────────────────────────
+anthropic>=0.40.0      # optional: cloud LLM fallback (set ANTHROPIC_API_KEY)
+# Local LLM: install Ollama separately (https://ollama.com) and `ollama pull llama3.2:3b`
+
+# ── Web automation ───────────────────────────────────────────────────
+selenium>=4.20.0       # optional: WhatsApp Web skill (needs Chrome installed)

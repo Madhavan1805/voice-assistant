@@ -1,0 +1,21 @@
+# Custom routines: say a trigger phrase, the assistant runs every step in order.
+# Step types:  say: "text"   |   skill: <name> (+ optional slots)   |   wait: <seconds, max 10>
+routines:
+  - name: good morning
+    triggers: ["good morning", "start my day", "kaalai vanakkam"]
+    steps:
+      - say: "Good morning!"
+      - skill: time
+      - skill: time
+        slots: {kind: date}
+      - skill: smart_home
+        slots: {device: bedroom light, state: "on"}
+
+  - name: good night
+    triggers: ["good night", "going to sleep", "bedtime"]
+    steps:
+      - skill: smart_home
+        slots: {device: living room light, state: "off"}
+      - skill: smart_home
+        slots: {device: fan, state: "off"}
+      - say: "Good night. Sleep well."

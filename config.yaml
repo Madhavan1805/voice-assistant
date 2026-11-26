@@ -1,0 +1,72 @@
+# Voice assistant configuration. Secrets live in .env (see .env.example).
+log_level: INFO
+
+assistant:
+  name: Madhav
+  wake_phrases: ["hey madhav", "hi madhav", "ok madhav", "madhav"]
+  wake_required: true          # false = respond to everything (noisy rooms: keep true)
+  followup_window_s: 8         # after a reply, no wake word needed for this long
+  skill_timeout_s: 20
+
+audio:
+  sample_rate: 16000
+  frame_ms: 30
+  device: null                 # null = system default; see `python main.py --list-devices`
+
+vad:
+  backend: auto                # auto | webrtc | energy
+  webrtc_aggressiveness: 2     # 0-3 (3 = most aggressive noise rejection)
+  min_rms: 120                 # raise if a noisy room triggers false starts
+  start_ratio: 3.0
+  stop_ratio: 1.8
+  end_silence_ms: 700          # how long a pause ends your sentence
+  max_utterance_s: 15
+
+stt:
+  language: auto               # auto | en | ta
+  whisper:
+    model: small               # tiny/base = faster, medium/large-v3 = more accurate (Tamil!)
+    compute_type: int8
+  cloud:
+    enabled: false             # OpenAI-compatible /audio/transcriptions fallback
+    model: whisper-1
+
+llm:
+  order: [ollama, anthropic]   # local first, cloud as fallback
+  llm_routing: true
+  ollama:
+    model: "llama3.2:3b"
+  anthropic:
+    model: "claude-sonnet-5-5"
+
+tts:
+  order: [piper, espeak]
+  piper:
+    voices:
+      en: models/piper/en_US-lessac-medium.onnx
+      # ta: models/piper/<your-tamil-voice>.onnx   # add one if you have it
+  espeak:
+    voices: {en: en-us, ta: ta}   # espeak-ng speaks Tamil out of the box
+
+skills:
+  timezone: Asia/Kolkata
+  routines_file: routines.yaml
+  system:
+    enabled: true
+    apps:                      # alias -> argv. Linux defaults; edit for macOS/Windows.
+      browser: ["xdg-open", "https://duckduckgo.com"]
+      youtube: ["xdg-open", "https://www.youtube.com"]
+      files: ["xdg-open", "."]
+      terminal: ["x-terminal-emulator"]
+  smart_home:
+    enabled: false
+    backend: mock              # mock | homeassistant
+    base_url: "http://homeassistant.local:8123"
+    devices:
+      living room light: light.living_room
+      bedroom light: light.bedroom
+      fan: switch.fan
+  whatsapp:
+    enabled: false
+    contacts:                  # spoken name -> number with country code
+      amma: "+910000000000"
