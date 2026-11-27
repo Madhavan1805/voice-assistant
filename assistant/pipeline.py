@@ -91,6 +91,10 @@ class SpeechPipeline:
         """Subscribe to state changes (e.g. to drive an LED or a status line)."""
         self._listeners.append(callback)
 
+    def announce(self, text: str, language: str | None = None) -> None:
+        """Speak something unprompted (timer done, reminder due)."""
+        _put_drop_oldest(self._speech_q, SkillResult(text, language=language or detect_language(text)))
+
     def request_stop(self) -> None:
         self._stop.set()
 

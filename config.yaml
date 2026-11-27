@@ -54,6 +54,8 @@ tts:
 skills:
   timezone: Asia/Kolkata
   routines_file: routines.yaml
+  weather:
+    default_city: Chennai      # used when you just say "what's the weather"
   system:
     enabled: true
     apps:                      # alias -> argv. Linux defaults; edit for macOS/Windows.

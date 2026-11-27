@@ -15,6 +15,7 @@ from .audio.input import AudioSource, MicrophoneStream
 from .audio.segmenter import UtteranceSegmenter
 from .audio.vad import build_vad
 from .config import Config
+from .core.announce import Announcer
 from .core.context import ConversationContext
 from .core.dispatcher import Dispatcher
 from .core.skill import SkillRegistry
@@ -23,11 +24,16 @@ from .errors import ConfigError, LLMError, STTError
 from .nlp.intent import IntentParser
 from .nlp.llm import AnthropicClient, FallbackLLM, LLMClient, OllamaClient
 from .pipeline import SpeechPipeline
+from .skills.calc import CalcSkill
 from .skills.knowledge import KnowledgeSkill
 from .skills.routines import RoutineSkill, load_routines
+from .skills.smalltalk import SmallTalkSkill
 from .skills.smart_home import SmartHomeSkill, build_backend
 from .skills.system import SystemSkill
 from .skills.time_skill import TimeSkill
+from .skills.timer import TimerSkill
+from .skills.weather import WeatherSkill
+from .skills.web import WebSkill
 from .skills.whatsapp import WhatsAppSkill
 from .stt.base import STTEngine
 from .stt.cloud import CloudWhisperSTT
@@ -50,6 +56,7 @@ class Assistant:
     llm: LLMClient | None
     registry: SkillRegistry
     dispatcher: Dispatcher
+    announcer: Announcer
 
     async def aclose(self) -> None:
         await self.registry.aclose()
@@ -93,6 +100,12 @@ def build_assistant(cfg: Config) -> Assistant:
     if cfg.skills.system.enabled:
         registry.register(SystemSkill(cfg.skills.system))
     registry.register(TimeSkill(cfg.skills.timezone))
+    announcer = Announcer()
+    registry.register(TimerSkill(announcer))
+    registry.register(WeatherSkill(cfg.skills.weather))
+    registry.register(WebSkill())
+    registry.register(CalcSkill())
+    registry.register(SmallTalkSkill(cfg.assistant.name))
     registry.register(KnowledgeSkill(llm, cfg.assistant.name, cfg.llm.max_tokens))
 
     parser = IntentParser(registry, llm, llm_routing=cfg.llm.llm_routing)
@@ -102,7 +115,7 @@ def build_assistant(cfg: Config) -> Assistant:
     )
     routines.bind(dispatcher.run_intent)
     log.info("skills: %s", ", ".join(s.name for s in registry.all()))
-    return Assistant(cfg, llm, registry, dispatcher)
+    return Assistant(cfg, llm, registry, dispatcher, announcer)
 
 
 def build_stt(cfg: Config) -> STTEngine:
@@ -187,7 +200,7 @@ def build_pipeline(
         threshold=cfg.assistant.wake_threshold,
         followup_window_s=cfg.assistant.followup_window_s,
     )
-    return SpeechPipeline(
+    pipeline = SpeechPipeline(
         source=source,
         segmenter=segmenter,
         stt=stt,
@@ -196,3 +209,5 @@ def build_pipeline(
         wake=wake,
         cfg=cfg.assistant,
     )
+    assistant.announcer.bind(pipeline.announce)   # timers/reminders can speak on their own
+    return pipeline

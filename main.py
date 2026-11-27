@@ -49,6 +49,7 @@ def _setup_logging(level: str, verbose: bool) -> None:
 
 
 async def _text_repl(assistant: Assistant) -> None:
+    assistant.announcer.bind(lambda text, lang=None: print(f"\nassistant> {text}", flush=True))
     print("Text mode — type what you would say (wake phrase not needed). Ctrl-D to quit.")
     loop = asyncio.get_running_loop()
     while True:

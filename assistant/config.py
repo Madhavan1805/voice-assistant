@@ -175,12 +175,19 @@ class WhatsAppCfg:
 
 
 @dataclass
+class WeatherCfg:
+    default_city: str = "Chennai"
+    timeout_s: float = 6.0
+
+
+@dataclass
 class SkillsCfg:
     timezone: str = "Asia/Kolkata"
     routines_file: str = "routines.yaml"
     system: SystemSkillCfg = field(default_factory=SystemSkillCfg)
     smart_home: SmartHomeCfg = field(default_factory=SmartHomeCfg)
     whatsapp: WhatsAppCfg = field(default_factory=WhatsAppCfg)
+    weather: WeatherCfg = field(default_factory=WeatherCfg)
 
 
 @dataclass

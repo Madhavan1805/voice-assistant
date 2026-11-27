@@ -147,3 +147,12 @@ async def test_stale_utterances_are_dropped_not_transcribed(make_assistant):
     p._cfg.max_utterance_age_s = -1          # everything is "too old"
     await _run(p)
     assert speaker.said == [] and len(stt.outcomes) == 1   # STT never even called
+
+
+async def test_announce_speaks_unprompted_messages(make_assistant):
+    d, _ = make_assistant(None, TimeSkill())
+    speaker = RecordingSpeaker()
+    p = _pipeline(ScriptedSTT(Transcript("nothing", "en", 0.9)), speaker, d, 0)
+    p.announce("Time's up! Your 5 minute timer is done.")
+    await _run(p)
+    assert speaker.said == ["Time's up! Your 5 minute timer is done."]
