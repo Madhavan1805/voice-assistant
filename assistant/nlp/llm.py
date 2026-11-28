@@ -5,7 +5,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 
-from ..config import AnthropicCfg, LLMCfg, OllamaCfg
+from ..config import AnthropicCfg, GroqCfg, LLMCfg, OllamaCfg
 from ..errors import LLMError
 from ..utils.retry import CircuitBreaker, retry_async
 
@@ -57,6 +57,53 @@ class OllamaClient(LLMClient):
             raise LLMError(f"ollama request failed: {exc}") from exc
         if not text.strip():
             raise LLMError("ollama returned an empty response")
+        return text.strip()
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+
+class GroqClient(LLMClient):
+    """Groq's OpenAI-compatible chat API (fast hosted Llama models)."""
+
+    name = "groq"
+
+    def __init__(self, cfg: GroqCfg, transport=None) -> None:
+        key = os.environ.get(cfg.api_key_env)
+        if not key:
+            raise LLMError(f"{cfg.api_key_env} is not set")
+        try:
+            import httpx
+        except ImportError as exc:
+            raise LLMError("httpx is not installed") from exc
+        self._cfg = cfg
+        self._httpx = httpx
+        self._client = httpx.AsyncClient(
+            base_url=cfg.base_url.rstrip("/"),
+            headers={"Authorization": f"Bearer {key}"},
+            timeout=cfg.timeout_s,
+            transport=transport,
+        )
+
+    async def complete(self, messages, *, system="", max_tokens=300, temperature=0.3) -> str:
+        payload = {
+            "model": self._cfg.model,
+            "messages": ([{"role": "system", "content": system}] if system else []) + messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+        try:
+            resp = await self._client.post("/chat/completions", json=payload)
+            resp.raise_for_status()
+            text = (resp.json()["choices"][0]["message"].get("content") or "")
+        except self._httpx.HTTPStatusError as exc:
+            code = exc.response.status_code
+            hint = {401: "the API key was rejected", 429: "rate limit reached", 404: "model not found"}.get(code, f"HTTP {code}")
+            raise LLMError(f"groq request failed: {hint}") from exc
+        except (self._httpx.HTTPError, ValueError, KeyError, IndexError) as exc:
+            raise LLMError(f"groq request failed: {exc}") from exc
+        if not text.strip():
+            raise LLMError("groq returned an empty response")
         return text.strip()
 
     async def aclose(self) -> None:

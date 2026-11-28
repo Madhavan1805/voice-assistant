@@ -22,7 +22,7 @@ from .core.skill import SkillRegistry
 from .core.wake import WakeGate
 from .errors import ConfigError, LLMError, STTError
 from .nlp.intent import IntentParser
-from .nlp.llm import AnthropicClient, FallbackLLM, LLMClient, OllamaClient
+from .nlp.llm import AnthropicClient, FallbackLLM, GroqClient, LLMClient, OllamaClient
 from .pipeline import SpeechPipeline
 from .skills.calc import CalcSkill
 from .skills.knowledge import KnowledgeSkill
@@ -68,11 +68,13 @@ def build_llm(cfg: Config) -> LLMClient | None:
     clients: list[LLMClient] = []
     for name in cfg.llm.order:
         try:
-            if name == "ollama" and cfg.llm.ollama.enabled:
+            if name == "groq" and cfg.llm.groq.enabled:
+                clients.append(GroqClient(cfg.llm.groq))
+            elif name == "ollama" and cfg.llm.ollama.enabled:
                 clients.append(OllamaClient(cfg.llm.ollama))
             elif name == "anthropic" and cfg.llm.anthropic.enabled:
                 clients.append(AnthropicClient(cfg.llm.anthropic))
-            elif name not in ("ollama", "anthropic"):
+            elif name not in ("groq", "ollama", "anthropic"):
                 log.warning("unknown LLM backend %r in llm.order", name)
         except LLMError as exc:
             log.info("LLM backend %r skipped: %s", name, exc)

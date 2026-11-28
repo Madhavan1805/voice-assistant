@@ -33,8 +33,10 @@ stt:
     model: whisper-1
 
 llm:
-  order: [ollama, anthropic]   # local first, cloud as fallback
+  order: [groq, ollama, anthropic]   # first one with a key/server wins; the rest are fallbacks
   llm_routing: true
+  groq:
+    model: "llama-3.3-70b-versatile"   # fast hosted Llama; needs GROQ_API_KEY in .env
   ollama:
     model: "llama3.2:3b"
   anthropic:

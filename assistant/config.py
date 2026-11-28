@@ -94,6 +94,15 @@ class OllamaCfg:
 
 
 @dataclass
+class GroqCfg:
+    enabled: bool = True              # skipped automatically if no API key
+    base_url: str = "https://api.groq.com/openai/v1"
+    model: str = "llama-3.3-70b-versatile"
+    api_key_env: str = "GROQ_API_KEY"
+    timeout_s: float = 15.0
+
+
+@dataclass
 class AnthropicCfg:
     enabled: bool = True              # skipped automatically if no API key
     model: str = "claude-sonnet-5-5"
@@ -103,12 +112,13 @@ class AnthropicCfg:
 
 @dataclass
 class LLMCfg:
-    order: list[str] = field(default_factory=lambda: ["ollama", "anthropic"])
+    order: list[str] = field(default_factory=lambda: ["groq", "ollama", "anthropic"])
     max_tokens: int = 300
     retries: int = 1
     breaker_threshold: int = 3
     breaker_reset_s: float = 60.0
     llm_routing: bool = True          # let the LLM route commands rules didn't catch
+    groq: GroqCfg = field(default_factory=GroqCfg)
     ollama: OllamaCfg = field(default_factory=OllamaCfg)
     anthropic: AnthropicCfg = field(default_factory=AnthropicCfg)
 
