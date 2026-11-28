@@ -123,7 +123,7 @@ class TimerSkill(Skill):
         if timer.what:
             self._announcer.say(f"Hey, reminder: {timer.what}.")
         else:
-            self._announcer.say(f"Time's up! Your {format_duration(timer.seconds)} timer is done.")
+            self._announcer.say(f"Time's up! Your timer for {format_duration(timer.seconds)} is done.")
 
     def _cancel_all(self) -> int:
         n = len(self._timers)

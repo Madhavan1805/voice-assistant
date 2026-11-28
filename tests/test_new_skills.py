@@ -76,7 +76,7 @@ async def test_timer_fires_announces_and_can_be_cancelled():
     assert slots == {"when": "1 second"}
     assert (await skill.handle(_intent(skill, slots), CTX)).speech == "Okay, timer set for 1 second."
     await asyncio.sleep(1.3)
-    assert heard == ["Time's up! Your 1 second timer is done."]
+    assert heard == ["Time's up! Your timer for 1 second is done."]
 
     slots = skill.match("remind me in 10 minutes to call amma")
     assert slots == {"when": "10 minutes", "what": "call amma"}
@@ -84,7 +84,7 @@ async def test_timer_fires_announces_and_can_be_cancelled():
     assert "call amma" in (await skill.handle(_intent(skill, skill.match("list my timers")), CTX)).speech
     assert (await skill.handle(_intent(skill, skill.match("cancel all timers")), CTX)).speech == "Okay, cancelled."
     await skill.aclose()
-    assert heard == ["Time's up! Your 1 second timer is done."]   # cancelled reminder never fired
+    assert heard == ["Time's up! Your timer for 1 second is done."]   # cancelled reminder never fired
 
 
 def test_timer_does_not_claim_unparseable_durations():

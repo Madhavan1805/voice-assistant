@@ -13,6 +13,7 @@ import asyncio
 import logging
 import signal
 import sys
+import webbrowser
 
 from assistant.audio.input import ArrayAudioSource, list_devices
 from assistant.bootstrap import (
@@ -32,7 +33,9 @@ def _parse_args() -> argparse.Namespace:
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--text", action="store_true", help="type commands instead of speaking")
     mode.add_argument("--wav", metavar="FILE", help="process a 16 kHz mono 16-bit WAV file")
+    mode.add_argument("--web", action="store_true", help="open the browser chat UI (no mic needed here)")
     mode.add_argument("--list-devices", action="store_true", help="list audio devices and exit")
+    p.add_argument("--port", type=int, default=8765, help="port for --web (default 8765)")
     p.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     return p.parse_args()
 
@@ -63,6 +66,20 @@ async def _text_repl(assistant: Assistant) -> None:
             print(f"assistant> {result.speech}")
 
 
+async def _web_mode(assistant: Assistant, port: int) -> None:
+    from assistant.webserver import WebServer
+
+    server = WebServer(assistant, asyncio.get_running_loop(), port=port)
+    actual = server.start()
+    url = f"http://127.0.0.1:{actual}"
+    print(f"Kandy is open at {url}  (Ctrl-C to stop)")
+    webbrowser.open(url)
+    try:
+        await asyncio.Event().wait()
+    finally:
+        server.stop()
+
+
 async def _amain(args: argparse.Namespace) -> int:
     cfg = Config.load(args.config)
     _setup_logging(cfg.log_level, args.verbose)
@@ -75,6 +92,9 @@ async def _amain(args: argparse.Namespace) -> int:
     try:
         if args.text:
             await _text_repl(assistant)
+            return 0
+        if args.web:
+            await _web_mode(assistant, args.port)
             return 0
 
         stt = build_stt(cfg)

@@ -33,6 +33,7 @@ sudo apt install libportaudio2 espeak-ng        # Linux; Tamil works via espeak-
 pip install -r requirements.txt
 cp .env.example .env                            # add ANTHROPIC_API_KEY if you want the cloud fallback
 
+python main.py --web           # Chat page in your browser (type, dictate, or Live voice)
 python main.py --text          # no mic needed: type commands
 python main.py --list-devices
 python main.py                 # live voice. Say: "Hey Kandy, what time is it?"
@@ -44,6 +45,14 @@ Local LLM: install [Ollama](https://ollama.com), then `ollama pull llama3.2:3b`.
 Download a `.onnx` and its `.onnx.json` from
 <https://huggingface.co/rhasspy/piper-voices> into `models/piper/` and match the path in
 `config.yaml` (`tts.piper.voices`). Without one, the assistant uses eSpeak-NG.
+
+## Browser chat page (`--web`)
+`python main.py --web` starts a local server (127.0.0.1:8765) and opens `web/index.html`: a chat
+UI with history, dark/light theme, dictation, spoken replies and a hands-free **Live** mode.
+Voice in the browser uses Chrome/Edge's built-in speech recognition and voices (Tamil: `ta-IN`
+needs the Tamil voice installed in your OS). Browser speech recognition sends audio to the
+browser vendor's service, so it is not local-first; the terminal voice mode (`python main.py`) is.
+The server only accepts requests from its own origin, so other websites can't drive your assistant.
 
 ## Reliability design
 - **Noise:** moving noise floor + start/stop hysteresis; WebRTC VAD is ANDed in when installed.

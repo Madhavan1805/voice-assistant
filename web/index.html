@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kandy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Hanken+Grotesk:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --tangerine: #ff9a3d; --pink: #ff4f8b; --violet: #7a6bff; --mint: #2bd4a8;
+  --bg: #f8f9fb; --side: #eef0f5; --surface: #ffffff; --raised: #eceff5; --ink: #1b1d22;
+  --muted: #646b78; --line: #dde1ea; --danger: #d6336c; --shadow: 0 8px 30px rgba(30, 34, 60, .10);
+  --grad: linear-gradient(90deg, var(--tangerine), var(--pink) 48%, var(--violet));
+  --display: "Bricolage Grotesque", "Noto Sans Tamil", "Nirmala UI", system-ui, sans-serif;
+  --ui: "Hanken Grotesk", "Noto Sans Tamil", "Nirmala UI", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #101114; --side: #16181d; --surface: #1b1e24; --raised: #262a33; --ink: #eceef2;
+  --muted: #9aa1ad; --line: #2c303a; --danger: #ff6b9a; --shadow: 0 8px 30px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --bg: #101114; --side: #16181d; --surface: #1b1e24; --raised: #262a33; --ink: #eceef2;
+    --muted: #9aa1ad; --line: #2c303a; --danger: #ff6b9a; --shadow: 0 8px 30px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--ui); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+button:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ---------- Kandy mark: a peppermint swirl ---------- */
+.orb { position: relative; display: inline-block; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; flex: none;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,.18); }
+.orb::before { content: ""; position: absolute; inset: -30%; filter: blur(3px);
+  background: conic-gradient(var(--tangerine), var(--pink), var(--violet), var(--mint), var(--tangerine)); }
+.orb::after { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 30% 24%, rgba(255,255,255,.85), rgba(255,255,255,0) 42%); }
+.orb.spin::before { animation: spin 1.1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Shell ---------- */
+.app { display: grid; grid-template-columns: 288px 1fr; grid-template-rows: minmax(0, 1fr); height: 100%; transition: grid-template-columns .22s ease; }
+.app[data-side="closed"] { grid-template-columns: 0 1fr; }
+.side { background: var(--side); display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-right: 1px solid var(--line); }
+.side-inner { width: 288px; display: flex; flex-direction: column; height: 100%; padding: 14px 12px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 14px; font: 700 21px/1 var(--display); letter-spacing: -.01em; }
+.brand .orb { width: 30px; height: 30px; }
+.newchat { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px; border-radius: 999px; background: var(--raised); font-weight: 500; margin-bottom: 18px; }
+.newchat:hover { background: color-mix(in srgb, var(--raised) 78%, var(--violet)); }
+.side h3 { margin: 0 8px 6px; font: 600 14px/1.4 var(--ui); color: var(--muted); }
+.history { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.hitem { display: flex; align-items: center; gap: 4px; border-radius: 999px; }
+.hitem button.open { flex: 1; min-width: 0; text-align: left; padding: 9px 14px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.hitem:hover, .hitem.active { background: var(--raised); }
+.hitem.active button.open { font-weight: 600; }
+.hitem .del { opacity: 0; padding: 7px; border-radius: 50%; color: var(--muted); }
+.hitem:hover .del, .hitem .del:focus-visible { opacity: 1; }
+.hitem .del:hover { color: var(--danger); }
+.empty-history { margin: 6px 10px; color: var(--muted); font-size: 14px; }
+.settings { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 4px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 12px; font-size: 15px; }
+.row select { background: var(--raised); color: var(--ink); border: 0; border-radius: 10px; padding: 6px 8px; font: inherit; font-size: 14px; max-width: 150px; }
+.switch { width: 40px; height: 24px; border-radius: 999px; background: var(--raised); position: relative; transition: background .15s; border: 1px solid var(--line); }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: transform .15s, background .15s; }
+.switch[aria-checked="true"] { background: var(--violet); border-color: var(--violet); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); background: #fff; }
+.themebtn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 8px 10px; border-radius: 12px; font-size: 15px; }
+.themebtn:hover, .row:hover { background: var(--raised); }
+
+main { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; position: relative; }
+.top { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+.iconbtn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); }
+.iconbtn:hover { background: var(--raised); color: var(--ink); }
+.top .title { font: 600 18px/1 var(--display); }
+.pill { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--raised); font-size: 13px; color: var(--muted); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); }
+.pill.off i { background: var(--danger); }
+.pill.off { color: var(--danger); }
+
+.thread { flex: 1; overflow-y: auto; scroll-behavior: smooth; padding: 0 18px; }
+.col { width: min(760px, 100%); margin: 0 auto; }
+.hero { padding: clamp(28px, 9vh, 96px) 0 8px; }
+.hero h1 { margin: 0; font: 700 clamp(36px, 6vw, 58px)/1.08 var(--display); letter-spacing: -.025em;
+  background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; padding-bottom: .08em; }
+.hero p { margin: 4px 0 0; font: 500 clamp(30px, 5vw, 52px)/1.12 var(--display); letter-spacing: -.025em; color: color-mix(in srgb, var(--ink) 38%, transparent); }
+.notice { margin: 22px 0 0; padding: 12px 16px; border-radius: 16px; background: var(--raised); color: var(--muted); font-size: 14.5px; }
+.notice b { color: var(--ink); font-weight: 600; }
+.notice code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--surface); padding: 1px 6px; border-radius: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0 40px; }
+.chip { padding: 12px 18px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); font-size: 15px; transition: border-color .15s, transform .15s; }
+.chip:hover { border-color: var(--violet); transform: translateY(-1px); }
+
+.msg { display: flex; gap: 14px; padding: 14px 0; }
+.msg.user { justify-content: flex-end; }
+.msg.user .bubble { max-width: 82%; background: var(--raised); padding: 11px 18px; border-radius: 22px 22px 6px 22px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg.bot .orb { margin-top: 2px; }
+.msg .body { min-width: 0; }
+.msg .text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 17px; line-height: 1.65; }
+.msg.error .text { color: var(--danger); }
+.msg.alert .text::before { content: "Reminder"; display: inline-block; margin-right: 10px; padding: 1px 10px; border-radius: 999px; background: var(--grad); color: #fff; font-size: 13px; font-weight: 600; }
+.acts { display: flex; gap: 2px; margin-top: 4px; opacity: 0; transition: opacity .15s; }
+.msg:hover .acts, .acts:focus-within { opacity: 1; }
+@media (hover: none) { .acts { opacity: 1; } }
+.acts .iconbtn { width: 34px; height: 34px; }
+.acts .iconbtn svg { width: 17px; height: 17px; }
+.dots { display: inline-flex; gap: 5px; padding: 12px 0; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
+.dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+
+.dock { padding: 8px 18px max(14px, env(safe-area-inset-bottom)); }
+.composer { width: min(760px, 100%); margin: 0 auto; background: var(--surface); border: 1px solid var(--line); border-radius: 30px; box-shadow: var(--shadow);
+  display: flex; align-items: flex-end; gap: 4px; padding: 8px 10px 8px 22px; transition: border-color .15s; }
+.composer:focus-within { border-color: var(--violet); }
+.composer textarea { flex: 1; resize: none; border: 0; outline: 0; background: transparent; color: var(--ink); font: 17px/1.5 var(--ui); padding: 9px 0; max-height: 180px; min-height: 28px; }
+.composer textarea::placeholder { color: var(--muted); }
+.composer .iconbtn { width: 44px; height: 44px; }
+.composer .iconbtn.rec { background: var(--pink); color: #fff; animation: pulse 1.4s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,79,139,.5); } 100% { box-shadow: 0 0 0 14px rgba(255,79,139,0); } }
+.composer .send { background: var(--ink); color: var(--bg); }
+.composer .send:disabled { opacity: .3; cursor: default; }
+.live-btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 10px; border-radius: 999px; background: var(--raised); font-weight: 500; font-size: 15px; }
+.live-btn .orb { width: 24px; height: 24px; }
+.live-btn:hover { background: color-mix(in srgb, var(--raised) 78%, var(--violet)); }
+.hint { width: min(760px, 100%); margin: 8px auto 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+button:disabled { cursor: not-allowed; }
+.boot *, .boot *::before, .boot *::after { transition: none !important; }
+
+/* ---------- Live voice overlay ---------- */
+.live { position: fixed; inset: 0; z-index: 30; background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(18px);
+  display: none; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 24px; text-align: center; }
+.live.on { display: flex; }
+.bigorb { width: min(46vmin, 260px); height: min(46vmin, 260px); border-radius: 50%; position: relative; overflow: hidden; box-shadow: 0 20px 70px rgba(122,107,255,.35), inset 0 -14px 30px rgba(0,0,0,.2); transition: transform .3s; }
+.bigorb::before { content: ""; position: absolute; inset: -30%; filter: blur(22px);
+  background: conic-gradient(var(--tangerine), var(--pink), var(--violet), var(--mint), var(--tangerine)); animation: spin 14s linear infinite; }
+.bigorb i { position: absolute; inset: 14%; border-radius: 50%; filter: blur(16px); mix-blend-mode: screen; opacity: .8;
+  background: conic-gradient(from 90deg, var(--mint), transparent 30%, var(--pink) 55%, transparent 80%, var(--mint)); animation: spin 9s linear infinite reverse; }
+.bigorb::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 22%, rgba(255,255,255,.8), rgba(255,255,255,0) 40%); }
+.live[data-state="listening"] .bigorb { animation: breathe 2.2s infinite ease-in-out; }
+.live[data-state="thinking"] .bigorb::before { animation: spin 1s linear infinite; }
+.live[data-state="speaking"] .bigorb { animation: talk .7s infinite ease-in-out; }
+@keyframes breathe { 0%, 100% { transform: scale(.94); } 50% { transform: scale(1.04); } }
+@keyframes talk { 0%, 100% { transform: scale(.97); } 50% { transform: scale(1.08); } }
+.live .state { font: 600 28px/1.2 var(--display); }
+.live .caption { min-height: 3.2em; max-width: 620px; color: var(--muted); font-size: 18px; overflow-wrap: anywhere; }
+.endlive { display: inline-flex; align-items: center; gap: 10px; padding: 13px 26px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; }
+
+.toast { position: fixed; left: 50%; bottom: 110px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 40;
+  background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 14px; font-size: 14.5px; max-width: min(520px, 90vw); transition: opacity .2s, transform .2s; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.backdrop { display: none; }
+
+@media (max-width: 820px) {
+  .app, .app[data-side="closed"] { grid-template-columns: 1fr; }
+  .side { position: fixed; inset: 0 auto 0 0; width: 292px; z-index: 20; transform: translateX(-100%); transition: transform .22s ease; box-shadow: var(--shadow); }
+  .app[data-side="open"] .side { transform: none; }
+  .app[data-side="open"] .backdrop { display: block; position: fixed; inset: 0; z-index: 15; background: rgba(0,0,0,.4); }
+  .live-btn span:not(.orb) { display: none; } .live-btn { padding: 0 10px; }
+  .composer { padding-left: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body class="boot">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4zM17 8.5a5 5 0 0 1 0 7"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></symbol>
+</svg>
+
+<div class="app" id="app" data-side="open">
+  <aside class="side" aria-label="Chats">
+    <div class="side-inner">
+      <div class="brand"><span class="orb" aria-hidden="true"></span><span id="brandName">Kandy</span></div>
+      <button class="newchat" id="newChat"><svg class="i"><use href="#i-plus"/></svg>New chat</button>
+      <h3>Recent</h3>
+      <div class="history" id="history"></div>
+      <div class="settings">
+        <div class="row"><span id="lblSpeak">Speak replies</span><button class="switch" id="speakSwitch" role="switch" aria-checked="true" aria-labelledby="lblSpeak"></button></div>
+        <div class="row"><label for="langSel">Mic language</label>
+          <select id="langSel"><option value="en-IN">English</option><option value="ta-IN">தமிழ்</option></select></div>
+        <button class="themebtn" id="themeBtn"><span id="themeLbl">Theme: system</span><svg class="i"><use href="#i-theme"/></svg></button>
+      </div>
+    </div>
+  </aside>
+  <div class="backdrop" id="backdrop"></div>
+
+  <main>
+    <header class="top">
+      <button class="iconbtn" id="sideBtn" aria-label="Toggle sidebar"><svg class="i"><use href="#i-menu"/></svg></button>
+      <span class="title" id="topTitle">Kandy</span>
+      <span class="pill off" id="status" role="status"><i></i><span>Connecting</span></span>
+    </header>
+
+    <section class="thread" id="thread" aria-live="polite"><div class="col" id="col"></div></section>
+
+    <footer class="dock">
+      <form class="composer" id="form" autocomplete="off">
+        <textarea id="input" rows="1" placeholder="Ask Kandy anything" aria-label="Message"></textarea>
+        <button type="button" class="iconbtn" id="micBtn" aria-label="Dictate"><svg class="i"><use href="#i-mic"/></svg></button>
+        <button type="button" class="live-btn" id="liveBtn" aria-label="Start a voice conversation"><span class="orb" aria-hidden="true"></span><span>Live</span></button>
+        <button type="submit" class="iconbtn send" id="sendBtn" aria-label="Send" disabled><svg class="i"><use href="#i-send"/></svg></button>
+      </form>
+      <p class="hint">Enter to send, Shift+Enter for a new line.</p>
+    </footer>
+  </main>
+</div>
+
+<div class="live" id="live" data-state="listening" role="dialog" aria-modal="true" aria-label="Voice conversation">
+  <div class="bigorb" aria-hidden="true"><i></i></div>
+  <div class="state" id="liveState">Listening</div>
+  <div class="caption" id="liveCaption"></div>
+  <button class="endlive" id="endLive"><svg class="i"><use href="#i-close"/></svg>End conversation</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const SUGGESTIONS = ["What's the weather today?", "Set a timer for 5 minutes", "What is 25 times 4?", "Tell me a joke", "Play Tamil songs on YouTube", "What can you do?"];
+  const TAMIL = /[஀-௿]/g;
+  const isTamil = (t) => ((t.match(TAMIL) || []).length / Math.max(1, t.replace(/\s/g, "").length)) > 0.3;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  /* ---------- persistence (never required for the page to work) ---------- */
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode */ } },
+  };
+  let chats = store.get("kandy.chats", []);
+  let activeId = store.get("kandy.active", null);
+  const settings = Object.assign({ speak: true, lang: "en-IN", theme: "auto", name: "Madhavan" }, store.get("kandy.settings", {}));
+  const saveSettings = () => store.set("kandy.settings", settings);
+  const saveChats = () => { store.set("kandy.chats", chats.slice(0, 40)); store.set("kandy.active", activeId); };
+  let status = { name: "Kandy", llm: true, online: false };
+  let busy = false, live = false, listening = false, activeRec = null;
+
+  const active = () => chats.find((c) => c.id === activeId);
+  function newChat() {
+    const c = { id: String(Date.now()), title: "New chat", messages: [] };
+    chats.unshift(c); activeId = c.id; saveChats();
+    return c;
+  }
+
+  /* ---------- API ---------- */
+  async function api(path, body) {
+    const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+    const r = await fetch(path, opt);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
+  }
+
+  /* ---------- rendering ---------- */
+  const svg = (id) => `<svg class="i"><use href="#i-${id}"/></svg>`;
+  function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+
+  function renderHistory() {
+    const box = $("history"); box.textContent = "";
+    if (!chats.length) { box.append(el("p", "empty-history", "Your chats will show up here.")); return; }
+    for (const c of chats) {
+      const row = el("div", "hitem" + (c.id === activeId ? " active" : ""));
+      const open = el("button", "open"); open.textContent = c.title; open.title = c.title;
+      open.onclick = () => { activeId = c.id; saveChats(); stopSpeaking(); renderAll(); closeSideOnMobile(); };
+      const del = el("button", "del", svg("close")); del.setAttribute("aria-label", "Delete chat " + c.title);
+      del.onclick = () => { chats = chats.filter((x) => x.id !== c.id); if (activeId === c.id) activeId = chats[0] ? chats[0].id : null; saveChats(); renderAll(); };
+      row.append(open, del); box.append(row);
+    }
+  }
+
+  function renderHero(col) {
+    const hero = el("div", "hero");
+    const h1 = el("h1"); h1.textContent = "Hello, " + settings.name;
+    const p = el("p"); p.textContent = "How can I help you today?";
+    hero.append(h1, p); col.append(hero);
+    if (!status.online) {
+      const n = el("div", "notice", "<b>Kandy's server isn't running.</b> Start it with <code>python main.py --web</code>, then refresh this page.");
+      col.append(n);
+    } else if (!status.llm) {
+      const n = el("div", "notice", "<b>No AI brain connected yet.</b> Timers, weather, maths, music and jokes work now. For open-ended chat, add <code>ANTHROPIC_API_KEY</code> to your <code>.env</code> file and restart.");
+      col.append(n);
+    }
+    const chips = el("div", "chips");
+    for (const s of SUGGESTIONS) { const b = el("button", "chip"); b.textContent = s; b.onclick = () => ask(s); chips.append(b); }
+    col.append(chips);
+  }
+
+  function messageNode(m) {
+    if (m.role === "user") {
+      const row = el("div", "msg user"); const b = el("div", "bubble"); b.textContent = m.text; row.append(b); return row;
+    }
+    const row = el("div", "msg bot" + (m.kind ? " " + m.kind : ""));
+    row.append(el("span", "orb"));
+    const body = el("div", "body"); const t = el("div", "text"); t.textContent = m.text; body.append(t);
+    const acts = el("div", "acts");
+    const copy = el("button", "iconbtn", svg("copy")); copy.setAttribute("aria-label", "Copy reply");
+    copy.onclick = async () => { try { await navigator.clipboard.writeText(m.text); toast("Copied"); } catch { toast("Couldn't copy"); } };
+    const say = el("button", "iconbtn", svg("speaker")); say.setAttribute("aria-label", "Read reply aloud");
+    say.onclick = () => speak(m.text);
+    acts.append(copy, say); body.append(acts); row.append(body);
+    return row;
+  }
+
+  function renderThread() {
+    const col = $("col"); col.textContent = "";
+    const c = active();
+    if (!c || !c.messages.length) renderHero(col);
+    else { for (const m of c.messages) col.append(messageNode(m)); }
+    if (busy) col.append(typingNode());
+    $("topTitle").textContent = c && c.messages.length ? c.title : status.name;
+    scrollDown();
+  }
+  const typingNode = () => { const r = el("div", "msg bot typing"); r.append(el("span", "orb spin"), el("div", "dots", "<i></i><i></i><i></i>")); return r; };
+  const scrollDown = () => { const t = $("thread"); requestAnimationFrame(() => { t.scrollTop = t.scrollHeight; }); };
+  function renderAll() { renderHistory(); renderThread(); }
+
+  function pushMessage(role, text, kind) {
+    const c = active() || newChat();
+    c.messages.push({ role, text, kind });
+    if (role === "user" && c.title === "New chat") c.title = text.length > 38 ? text.slice(0, 38) + "…" : text;
+    saveChats(); renderAll();
+  }
+
+  /* ---------- asking ---------- */
+  async function ask(text) {
+    text = text.trim(); if (!text || busy) return null;
+    stopSpeaking(); pushMessage("user", text);
+    busy = true; $("sendBtn").disabled = true; renderThread();
+    let reply, kind;
+    try {
+      const r = await api("/api/chat", { text });
+      reply = r.reply || "I don't have anything to say to that."; kind = r.ok ? undefined : "error";
+      setOnline(true);
+    } catch {
+      reply = "I can't reach Kandy's server. Start it with python main.py --web."; kind = "error"; setOnline(false);
+    }
+    busy = false; pushMessage("bot", reply, kind); updateSend();
+    if (settings.speak || live) speak(reply);
+    return reply;
+  }
+
+  /* ---------- speech out ---------- */
+  let warnedVoice = false;
+  const synth = window.speechSynthesis;
+  function pickVoice(lang) {
+    const vs = synth ? synth.getVoices() : [];
+    const want = lang === "ta" ? ["ta-IN", "ta"] : ["en-IN", "en-GB", "en-US", "en"];
+    for (const w of want) { const v = vs.find((x) => x.lang.replace("_", "-").toLowerCase().startsWith(w.toLowerCase())); if (v) return v; }
+    return null;
+  }
+  function stopSpeaking() { if (synth) synth.cancel(); }
+  function speak(text) {
+    return new Promise((resolve) => {
+      if (!synth || !text) return resolve();
+      synth.cancel();
+      const lang = isTamil(text) ? "ta" : "en";
+      const voice = pickVoice(lang);
+      if (!voice && lang === "ta") { if (!warnedVoice) { warnedVoice = true; toast("This browser has no Tamil voice. Install one in your system speech settings."); } return resolve(); }
+      const u = new SpeechSynthesisUtterance(text);
+      if (voice) { u.voice = voice; u.lang = voice.lang; }
+      u.rate = 1.02; u.onend = u.onerror = () => resolve();
+      synth.speak(u);
+    });
+  }
+  if (synth) synth.onvoiceschanged = () => {};
+
+  /* ---------- speech in ---------- */
+  function listen(lang, onText) {
+    return new Promise((resolve, reject) => {
+      const rec = new SR(); rec.lang = lang; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+      let finalText = "", interim = "", err = "";
+      rec.onresult = (e) => {
+        interim = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) finalText += t; else interim += t; }
+        onText && onText((finalText + interim).trim());
+      };
+      rec.onerror = (e) => { err = e.error; };
+      rec.onend = () => { activeRec = null; (err && err !== "no-speech" && err !== "aborted") ? reject(new Error(err)) : resolve((finalText || interim).trim()); };
+      activeRec = rec;
+      try { rec.start(); } catch (e) { reject(e); }
+    });
+  }
+  const micMessage = (code) => ({
+    "not-allowed": "Microphone is blocked. Allow it from the lock icon in the address bar.",
+    "service-not-allowed": "Microphone is blocked. Allow it from the lock icon in the address bar.",
+    "audio-capture": "No microphone found.",
+    "network": "Speech recognition needs an internet connection in this browser.",
+    "language-not-supported": "This browser can't recognise that language.",
+  }[code] || "The microphone stopped working (" + code + ").");
+
+  async function dictate() {
+    if (listening) { activeRec && activeRec.stop(); return; }
+    stopSpeaking(); listening = true; $("micBtn").classList.add("rec"); $("micBtn").innerHTML = svg("stop"); $("micBtn").setAttribute("aria-label", "Stop dictation");
+    let text = "";
+    try { text = await listen(settings.lang, (t) => { $("input").value = t; autosize(); updateSend(); }); }
+    catch (e) { toast(micMessage(e.message)); }
+    listening = false; $("micBtn").classList.remove("rec"); $("micBtn").innerHTML = svg("mic"); $("micBtn").setAttribute("aria-label", "Dictate");
+    if (text) { $("input").value = ""; autosize(); updateSend(); ask(text); }
+  }
+
+  /* ---------- live conversation ---------- */
+  const setLive = (state, label) => { $("live").dataset.state = state; $("liveState").textContent = label; };
+  async function startLive() {
+    if (live) return; live = true; stopSpeaking(); $("live").classList.add("on"); $("liveCaption").textContent = "";
+    $("endLive").focus();
+    while (live) {
+      setLive("listening", "Listening"); let text = "";
+      try { text = await listen(settings.lang, (t) => { $("liveCaption").textContent = t; }); }
+      catch (e) { toast(micMessage(e.message)); break; }
+      if (!live) break;
+      if (!text) { await new Promise((r) => setTimeout(r, 250)); continue; }
+      setLive("thinking", "Thinking"); $("liveCaption").textContent = text;
+      const reply = await ask(text);
+      if (!live) break;
+      if (reply) { setLive("speaking", "Speaking"); $("liveCaption").textContent = reply; await speak(reply); }
+    }
+    endLive();
+  }
+  function endLive() { live = false; if (activeRec) { try { activeRec.abort(); } catch {} } stopSpeaking(); $("live").classList.remove("on"); $("liveBtn").focus(); }
+
+  /* ---------- status + announcements ---------- */
+  function setOnline(on) {
+    const changed = status.online !== on; status.online = on;
+    const p = $("status"); p.classList.toggle("off", !on); p.lastElementChild.textContent = on ? "Online" : "Offline";
+    if (changed) renderThread();
+  }
+  async function refreshStatus() {
+    try { const s = await api("/api/status"); const llmChanged = s.llm !== status.llm; status.name = s.name; status.llm = s.llm; $("brandName").textContent = s.name; document.title = s.name; setOnline(true); if (llmChanged) renderThread(); }
+    catch { setOnline(false); }
+  }
+  async function pollEvents() {
+    if (!status.online) return;
+    try {
+      const { events } = await api("/api/events");
+      for (const e of events) { pushMessage("bot", e.text, "alert"); if (settings.speak || live) speak(e.text); }
+    } catch { /* next poll will tell us if we're offline */ }
+  }
+
+  /* ---------- small UI helpers ---------- */
+  let toastTimer;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 4200); }
+  const autosize = () => { const i = $("input"); i.style.height = "auto"; i.style.height = Math.min(i.scrollHeight, 180) + "px"; };
+  const updateSend = () => { $("sendBtn").disabled = busy || !$("input").value.trim(); };
+  const closeSideOnMobile = () => { if (matchMedia("(max-width: 820px)").matches) $("app").dataset.side = "closed"; };
+  function applyTheme() {
+    document.documentElement.dataset.theme = settings.theme;
+    $("themeLbl").textContent = "Theme: " + ({ auto: "system", light: "light", dark: "dark" }[settings.theme]);
+  }
+
+  /* ---------- wiring ---------- */
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); const v = $("input").value; $("input").value = ""; autosize(); updateSend(); ask(v); });
+  $("input").addEventListener("input", () => { autosize(); updateSend(); });
+  $("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); } });
+  $("newChat").onclick = async () => { stopSpeaking(); newChat(); renderAll(); closeSideOnMobile(); $("input").focus(); try { await api("/api/reset", {}); } catch {} };
+  $("sideBtn").onclick = () => { const a = $("app"); a.dataset.side = a.dataset.side === "open" ? "closed" : "open"; };
+  $("backdrop").onclick = () => { $("app").dataset.side = "closed"; };
+  $("speakSwitch").onclick = (e) => { settings.speak = !settings.speak; e.currentTarget.setAttribute("aria-checked", String(settings.speak)); if (!settings.speak) stopSpeaking(); saveSettings(); };
+  $("langSel").onchange = (e) => { settings.lang = e.target.value; saveSettings(); };
+  $("themeBtn").onclick = () => { settings.theme = { auto: "light", light: "dark", dark: "auto" }[settings.theme]; saveSettings(); applyTheme(); };
+  $("endLive").onclick = endLive;
+  $("liveBtn").onclick = startLive;
+  $("micBtn").onclick = dictate;
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && live) endLive(); });
+  if (!SR) for (const id of ["micBtn", "liveBtn"]) { const b = $(id); b.disabled = true; b.title = "Voice input needs Chrome or Edge"; b.style.opacity = .45; }
+
+  /* ---------- start ---------- */
+  $("speakSwitch").setAttribute("aria-checked", String(settings.speak));
+  $("langSel").value = settings.lang;
+  if (matchMedia("(max-width: 820px)").matches) $("app").dataset.side = "closed";
+  applyTheme();
+  if (!active()) { activeId = chats[0] ? chats[0].id : null; }
+  renderAll(); autosize();
+  refreshStatus(); setInterval(refreshStatus, 10000); setInterval(pollEvents, 2000);
+  $("input").focus();
+  requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("boot")));
+})();
+</script>
+</body>
+</html>
